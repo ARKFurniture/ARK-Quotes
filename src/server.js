@@ -196,13 +196,13 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
 
     // Build a message for the AI from the form fields
     const message = [
-      description ? \`Customer description: \${description}\` : '',
-      furniturePieces ? \`Furniture type: \${furniturePieces}\` : '',
-      phone ? \`Phone: \${phone}\` : '',
-      \`Finish preference (customer selected): \${finishPreference}\`
+      description ? `Customer description: ${description}` : '',
+      furniturePieces ? `Furniture type: ${furniturePieces}` : '',
+      phone ? `Phone: ${phone}` : '',
+      `Finish preference (customer selected): ${finishPreference}`
     ].filter(Boolean).join('\n');
 
-    console.log(\`[FORM] New submission from \${customerName} <\${customerEmail}> — finish: \${finishPreference}\`);
+    console.log(`[FORM] New submission from ${customerName} <${customerEmail}> — finish: ${finishPreference}`);
 
     // AI analysis — pass finish preference as a hint so AI doesn't override customer's choice
     const analysis = await analyzeEmail({
@@ -247,9 +247,9 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
       html_quote:       htmlQuote
     });
 
-    console.log(\`[DB] Quote #\${quoteId} saved from web form\`);
+    console.log(`[DB] Quote #${quoteId} saved from web form`);
 
-    const dashboardUrl = process.env.DASHBOARD_URL || \`https://\${process.env.FLY_APP_NAME}.fly.dev\`;
+    const dashboardUrl = process.env.DASHBOARD_URL || `https://${process.env.FLY_APP_NAME}.fly.dev`;
     try {
       await sendApprovalNotification({ quoteId, customerName, customerEmail, pieceType: analysis.piece_type, dashboardUrl });
     } catch (mailErr) {
