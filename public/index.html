@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARK Furniture — Quote Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0a;--surface:#111111;--surface2:#181818;--border:#222222;--border2:#2e2e2e;
+  --gold:#c9a84c;--gold-soft:#c9a84c18;--gold-mid:#c9a84c55;
+  --text:#f0ede6;--muted:#7a7570;--muted2:#4a4642;
+  --green:#3d9970;--green-soft:#3d997018;--red:#c0392b;--red-soft:#c0392b18;--blue:#3a7bd5;--blue-soft:#3a7bd518;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+.shell{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);padding:28px 0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0;}
+.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid var(--border);}
+.sidebar-logo img{width:110px;filter:brightness(0) invert(1);opacity:.9;}
+.sidebar-logo .tagline{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:8px;}
+.nav{padding:20px 0;}
+.nav-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);padding:0 24px;margin-bottom:8px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 24px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:400;transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-soft);}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--gold);color:#000;font-size:10px;font-weight:600;border-radius:10px;padding:2px 7px;}
+.pickup-widget{margin:20px 16px 0;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px;}
+.pickup-widget .pw-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;}
+.pickup-widget input[type=date]{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;cursor:pointer;color-scheme:dark;}
+.pickup-widget input[type=date]:focus{outline:none;border-color:var(--gold);}
+.pickup-widget .pw-hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4;}
+.pickup-save{margin-top:8px;width:100%;background:var(--gold);color:#000;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.pickup-save:hover{filter:brightness(1.1);}
+
+/* MAIN */
+.main{flex:1;overflow:auto;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10;}
+.topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:500;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.status-text{font-size:12px;color:var(--muted);}
+
+/* PAGES */
+.page{padding:32px;display:none;}
+.page.active{display:block;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.section-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;}
+.section-sub{font-size:13px;color:var(--muted);margin-top:3px;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.card-head{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:500;}
+.card-body{padding:24px;}
+
+/* PENDING QUOTES */
+.quote-card{border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.quote-card-head{padding:16px 20px;background:var(--surface2);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.quote-card-body{padding:0;}
+.qc-name{font-weight:500;font-size:15px;}
+.qc-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.qc-meta{display:flex;gap:16px;flex-wrap:wrap;}
+.qc-meta-item{font-size:12px;color:var(--muted);}
+.qc-meta-item strong{color:var(--text);}
+.qc-actions{display:flex;gap:8px;flex-shrink:0;}
+.quote-preview-toggle{width:100%;background:none;border:none;border-top:1px solid var(--border2);padding:10px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.quote-preview-toggle:hover{color:var(--text);background:var(--surface2);}
+.quote-preview-frame{display:none;border-top:1px solid var(--border2);}
+.quote-preview-frame.open{display:block;}
+.quote-preview-frame iframe{width:100%;height:550px;border:none;display:block;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-gold:hover{filter:brightness(1.1);}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border2);}
+.btn-outline:hover{border-color:var(--muted);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{filter:brightness(1.1);}
+.btn-red{background:var(--red-soft);color:#e74c3c;border:1px solid #c0392b44;}
+.btn-red:hover{background:var(--red);color:#fff;border-color:var(--red);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-sent{background:var(--green-soft);color:var(--green);}
+.badge-pending{background:var(--gold-soft);color:var(--gold);}
+.badge-discarded{background:var(--red-soft);color:var(--red);}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;}
+.stat-card .sk{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+.stat-card .sv{font-size:30px;font-weight:300;font-family:'Playfair Display',serif;color:var(--gold);}
+.stat-card .ss{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* HISTORY TABLE */
+.hist-table{width:100%;border-collapse:collapse;font-size:13px;}
+.hist-table thead th{text-align:left;padding:10px 14px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);}
+.hist-table tbody td{padding:14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.hist-table tbody tr:last-child td{border-bottom:none;}
+.hist-table tbody tr:hover{background:var(--surface2);}
+
+/* LOADING SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-state{text-align:center;padding:40px;color:var(--muted);}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:14px 20px;font-size:13px;display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(12px);transition:all .3s;z-index:1000;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast-dot{width:8px;height:8px;border-radius:50%;}
+.toast-dot.g{background:var(--green);}.toast-dot.r{background:var(--red);}.toast-dot.y{background:var(--gold);}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:340px;text-align:center;}
+.login-card img{width:120px;filter:brightness(0) invert(1);opacity:.9;margin-bottom:24px;}
+.login-card h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px;}
+.login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.login-card input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;margin-bottom:12px;}
+.login-card input:focus{outline:none;border-color:var(--gold);}
+.login-card button{width:100%;background:var(--gold);color:#000;border:none;border-radius:8px;padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.login-err{font-size:12px;color:#e74c3c;margin-top:8px;min-height:18px;}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-card">
+    <img src="https://cdn.shopify.com/s/files/1/0607/5491/9639/files/ARKLogo.png?v=1636138147" alt="ARK Furniture"/>
+    <h2>Quote Dashboard</h2>
+    <p>Enter your API key to continue</p>
+    <input type="password" id="login-key" placeholder="API key" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until login) -->
+<div class="shell" id="app" style="display:none;">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="https://cdn.shopify.com/s/files/1/0607/5491/9639/files/ARKLogo.png?v=1636138147" alt="ARK Furniture"/>
+      <div class="tagline">Quote Dashboard</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Menu</div>
+      <div class="nav-item active" id="nav-pending" onclick="showPage('pending')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Pending Approval
+        <span class="nav-badge" id="pending-badge">0</span>
+      </div>
+      <div class="nav-item" id="nav-history" onclick="showPage('history')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Quote History
+      </div>
+      <div class="nav-item" id="nav-overview" onclick="showPage('overview')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" id="nav-notes" onclick="showPage('notes')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        AI Notes
+      </div>
+    </nav>
+    <div class="pickup-widget">
+      <div class="pw-label">Next pickup date</div>
+      <input type="date" id="pickup-date-input" onchange="pickupChanged()"/>
+      <div class="pw-hint" id="pickup-hint">Loading...</div>
+      <button class="pickup-save" id="pickup-save-btn" onclick="savePickupDate()" disabled>Save Date</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">ARK Furniture — Quotes</div>
+      <div class="topbar-right">
+        <div class="status-dot"></div>
+        <div class="status-text" id="connection-status">Connected</div>
+        <button class="btn btn-outline" onclick="refreshAll()" style="padding:6px 12px;font-size:12px;">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- PENDING PAGE -->
+    <div class="page active" id="page-pending">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Pending Approval</div>
+          <div class="section-sub">Quotes generated and waiting for your review</div>
+        </div>
+      </div>
+      <div id="pending-list">
+        <div class="loading-state"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Quote History</div>
+          <div class="section-sub">All quotes generated</div>
+        </div>
+      </div>
+      <div class="card">
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Customer</th><th>Piece</th><th>Finish</th><th>Detail</th><th>Status</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <tr><td colspan="7" class="loading-state"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- OVERVIEW PAGE -->
+    <div class="page" id="page-overview">
+      <div class="section-header">
+        <div><div class="section-title">Overview</div></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="sk">Total quotes</div><div class="sv" id="stat-total">—</div><div class="ss">All time</div></div>
+        <div class="stat-card"><div class="sk">Quotes sent</div><div class="sv" id="stat-sent">—</div><div class="ss">Approved & delivered</div></div>
+        <div class="stat-card"><div class="sk">Pending</div><div class="sv" id="stat-pending">—</div><div class="ss">Awaiting your review</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">How quotes arrive</div></div>
+        <div class="card-body" style="line-height:1.9;color:var(--muted);font-size:14px;">
+          <p style="margin-bottom:10px;">1. <strong style="color:var(--text);">Customer emails you</strong> at info@arkfurniture.ca with a photo and description.</p>
+          <p style="margin-bottom:10px;">2. <strong style="color:var(--text);">Zapier detects the email</strong> and sends it to your backend automatically.</p>
+          <p style="margin-bottom:10px;">3. <strong style="color:var(--text);">The AI analyzes</strong> the photo and message — piece type, finish preference, detail rating — and builds a branded quote.</p>
+          <p style="margin-bottom:10px;">4. <strong style="color:var(--text);">You get an email notification</strong> with a link to review the quote here.</p>
+          <p>5. <strong style="color:var(--text);">Click Approve</strong> and the quote is sent directly to the customer from info@arkfurniture.ca.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-dot g" id="toast-dot"></div>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ─── AUTH ─────────────────────────────────────────────────────────────────
+let API_KEY = sessionStorage.getItem('ark_api_key') || '';
+
+function doLogin() {
+  const key = document.getElementById('login-key').value.trim();
+  if (!key) return;
+  API_KEY = key;
+  sessionStorage.setItem('ark_api_key', key);
+  initApp();
+}
+
+async function initApp() {
+  try {
+    const res = await apiFetch('/api/stats');
+    if (!res.ok) throw new Error('bad key');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    loadAll();
+  } catch {
+    document.getElementById('login-err').textContent = 'Invalid API key.';
+    API_KEY = '';
+    sessionStorage.removeItem('ark_api_key');
+  }
+}
+
+// ─── API ──────────────────────────────────────────────────────────────────
+function apiFetch(path, options = {}) {
+  return fetch(path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      ...(options.headers || {})
+    }
+  });
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'pending') loadPending();
+  if (id === 'history') loadHistory();
+  if (id === 'overview') loadStats();
+  if (id === 'notes') loadNotes();
+}
+
+// ─── PICKUP DATE ──────────────────────────────────────────────────────────
+let pendingPickupDate = null;
+
+async function loadPickupDate() {
+  try {
+    const res = await apiFetch('/api/settings');
+    const data = await res.json();
+    if (data.pickup_date) {
+      document.getElementById('pickup-date-input').value = data.pickup_date;
+      updatePickupHint(data.pickup_date);
+    }
+  } catch (e) { console.error(e); }
+}
+
+function pickupChanged() {
+  pendingPickupDate = document.getElementById('pickup-date-input').value;
+  document.getElementById('pickup-save-btn').disabled = false;
+  updatePickupHint(pendingPickupDate);
+}
+
+async function savePickupDate() {
+  if (!pendingPickupDate) return;
+  try {
+    await apiFetch('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ pickup_date: pendingPickupDate })
+    });
+    document.getElementById('pickup-save-btn').disabled = true;
+    pendingPickupDate = null;
+    showToast('Pickup date saved — all new quotes will use this date.', 'g');
+  } catch (e) {
+    showToast('Failed to save date.', 'r');
+  }
+}
+
+function updatePickupHint(isoDate) {
+  if (!isoDate) return;
+  const d = new Date(isoDate + 'T12:00:00');
+  const fmt = d.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('pickup-hint').textContent = fmt;
+}
+
+// ─── PENDING QUOTES ───────────────────────────────────────────────────────
+async function loadPending() {
+  const list = document.getElementById('pending-list');
+  list.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+  try {
+    const res = await apiFetch('/api/quotes/pending');
+    const quotes = await res.json();
+    document.getElementById('pending-badge').textContent = quotes.length;
+    if (!quotes.length) {
+      list.innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted);font-size:14px;">No quotes pending approval — you\'re all caught up.</div>';
+      return;
+    }
+    list.innerHTML = quotes.map(q => renderPendingCard(q)).join('');
+  } catch (e) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;">Failed to load quotes. Check your connection.</div>';
+  }
+}
+
+function renderPendingCard(q) {
+  const created = new Date(q.created_at).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const finishLabel = q.finish === 'stained' ? 'Stained wood' : q.finish === 'painted' ? 'Painted' : 'All options';
+  const prices = [
+    q.option1_label ? `${q.option1_label}: $${q.option1_price.toLocaleString()}` : '',
+    q.option2_label ? `${q.option2_label}: $${q.option2_price.toLocaleString()}` : '',
+    q.option3_label ? `${q.option3_label}: $${q.option3_price.toLocaleString()}` : '',
+    q.option4_label ? `${q.option4_label}: $${q.option4_price.toLocaleString()}` : '',
+  ].filter(Boolean).join(' &nbsp;·&nbsp; ');
+
+  return `
+  <div class="quote-card" id="qcard-${q.id}">
+    <div class="quote-card-head">
+      <div style="display:flex;gap:16px;align-items:flex-start;flex:1;min-width:0;">
+        <img src="/api/quotes/${q.id}/image?apiKey=${encodeURIComponent(API_KEY)}"
+             style="width:80px;height:80px;object-fit:cover;border-radius:8px;flex-shrink:0;border:1px solid var(--border2);"
+             onerror="this.style.display='none'"/>
+        <div style="min-width:0;">
+          <div class="qc-name">${esc(q.customer_name)}</div>
+          <div class="qc-sub">${esc(q.customer_email)}</div>
+          <div class="qc-meta" style="margin-top:8px;">
+            <div class="qc-meta-item"><strong>${esc(q.piece_type)}</strong></div>
+            <div class="qc-meta-item">Finish: <strong>${finishLabel}</strong></div>
+            <div class="qc-meta-item">Detail: <strong>${q.detail_rating}/3</strong></div>
+            <div class="qc-meta-item" style="color:var(--muted2);">${created}</div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;">${prices}</div>
+        </div>
+      </div>
+      <div class="qc-actions" style="flex-shrink:0;">
+        <button class="btn btn-green" onclick="approveQuote(${q.id})">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Approve & Send
+        </button>
+        <button class="btn btn-outline" onclick="toggleEditPanel(${q.id}, this)">Edit</button>
+        <button class="btn btn-red" onclick="discardQuote(${q.id})">Discard</button>
+      </div>
+    </div>
+
+    <!-- EDIT / REGENERATE PANEL -->
+    <div id="edit-panel-${q.id}" style="display:none;border-top:1px solid var(--border2);padding:16px 20px;background:var(--surface2);">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Regenerate with feedback</div>
+          <textarea id="regen-feedback-${q.id}" placeholder="e.g. The opening paragraph was too generic. Mention that this looks like solid oak. Make the tone warmer." style="width:100%;height:80px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px;resize:none;"></textarea>
+          <button class="btn btn-gold" style="margin-top:8px;font-size:12px;padding:8px 14px;" onclick="regenerateQuote(${q.id})">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Regenerate Quote
+          </button>
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Edit HTML directly</div>
+          <textarea id="html-edit-${q.id}" style="width:100%;height:80px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:10px;resize:none;" placeholder="Paste modified HTML here to replace the quote..."></textarea>
+          <button class="btn btn-outline" style="margin-top:8px;font-size:12px;padding:8px 14px;" onclick="saveHtmlEdit(${q.id})">Save HTML</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="quote-preview-toggle" onclick="togglePreview(${q.id}, this)">
+      ▼ &nbsp; Preview quote email
+    </button>
+    <div class="quote-preview-frame" id="preview-${q.id}">
+      <iframe id="iframe-${q.id}" src="/api/quotes/${q.id}/preview?apiKey=${encodeURIComponent(API_KEY)}"></iframe>
+    </div>
+  </div>`;
+}
+
+function toggleEditPanel(id, btn) {
+  const panel = document.getElementById('edit-panel-' + id);
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? 'Close' : 'Edit';
+  // Pre-fill HTML edit area with current quote HTML on first open
+  if (open) {
+    const htmlArea = document.getElementById('html-edit-' + id);
+    if (!htmlArea.value) {
+      apiFetch(`/api/quotes/${id}/preview`)
+        .then(r => r.text())
+        .then(html => { htmlArea.value = html; })
+        .catch(() => {});
+    }
+  }
+}
+
+async function regenerateQuote(id) {
+  const feedback = document.getElementById('regen-feedback-' + id).value.trim();
+  const btn = document.querySelector(`#edit-panel-${id} .btn-gold`);
+  btn.disabled = true;
+  btn.textContent = 'Regenerating...';
+  try {
+    const res = await apiFetch(`/api/quotes/${id}/regenerate`, {
+      method: 'POST',
+      body: JSON.stringify({ feedback })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    // Reload preview iframe
+    const iframe = document.getElementById('iframe-' + id);
+    if (iframe) iframe.src = iframe.src;
+    // Update HTML edit area
+    const htmlArea = document.getElementById('html-edit-' + id);
+    if (htmlArea) htmlArea.value = data.html;
+    showToast('Quote regenerated — preview updated.', 'g');
+    document.getElementById('regen-feedback-' + id).value = '';
+  } catch (e) {
+    showToast(e.message || 'Regeneration failed.', 'r');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Regenerate Quote';
+  }
+}
+
+async function saveHtmlEdit(id) {
+  const html = document.getElementById('html-edit-' + id).value.trim();
+  if (!html) { showToast('Nothing to save.', 'y'); return; }
+  try {
+    const res = await apiFetch(`/api/quotes/${id}/html`, {
+      method: 'PATCH',
+      body: JSON.stringify({ html })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    // Reload preview
+    const iframe = document.getElementById('iframe-' + id);
+    if (iframe) iframe.src = iframe.src;
+    showToast('Quote HTML saved — preview updated.', 'g');
+  } catch (e) {
+    showToast('Failed to save HTML.', 'r');
+  }
+}
+
+function togglePreview(id, btn) {
+  const frame = document.getElementById('preview-' + id);
+  const open = frame.classList.toggle('open');
+  btn.innerHTML = open
+    ? '▲ &nbsp; Hide preview'
+    : '▼ &nbsp; Preview quote email';
+}
+
+async function approveQuote(id) {
+  const btn = document.querySelector(`#qcard-${id} .btn-green`);
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Sending...';
+  try {
+    const res = await apiFetch(`/api/quotes/${id}/approve`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('qcard-' + id).remove();
+    showToast('Quote sent to customer.', 'g');
+    loadPending();
+  } catch (e) {
+    showToast(e.message || 'Failed to send quote.', 'r');
+    btn.disabled = false;
+    btn.innerHTML = '✓ Approve & Send';
+  }
+}
+
+async function discardQuote(id) {
+  if (!confirm('Discard this quote? This cannot be undone.')) return;
+  try {
+    await apiFetch(`/api/quotes/${id}/discard`, { method: 'POST' });
+    document.getElementById('qcard-' + id).remove();
+    showToast('Quote discarded.', 'y');
+    loadPending();
+  } catch (e) {
+    showToast('Failed to discard.', 'r');
+  }
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const tbody = document.getElementById('history-body');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading-state"><div class="spinner"></div></td></tr>';
+  try {
+    const res = await apiFetch('/api/quotes');
+    const quotes = await res.json();
+    if (!quotes.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:24px;text-align:center;">No quotes yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = quotes.map(q => {
+      const d = new Date(q.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+      return `<tr>
+        <td style="color:var(--muted);">#${q.id}</td>
+        <td><strong>${esc(q.customer_name)}</strong><br><span style="font-size:11px;color:var(--muted);">${esc(q.customer_email)}</span></td>
+        <td>${esc(q.piece_type)}</td>
+        <td style="text-transform:capitalize;">${q.finish}</td>
+        <td>${q.detail_rating}</td>
+        <td><span class="badge badge-${q.status}">${q.status}</span></td>
+        <td style="color:var(--muted);">${d}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:#e74c3c;padding:24px;text-align:center;">Failed to load history.</td></tr>';
+  }
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res = await apiFetch('/api/stats');
+    const s = await res.json();
+    document.getElementById('stat-total').textContent = s.total;
+    document.getElementById('stat-sent').textContent = s.sent;
+    document.getElementById('stat-pending').textContent = s.pending;
+  } catch (e) {}
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg, type = 'g') {
+  clearTimeout(toastTimer);
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-dot').className = 'toast-dot ' + type;
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+function refreshAll() { loadAll(); showToast('Refreshed.', 'g'); }
+
+function loadAll() {
+  loadPickupDate();
+  loadPending();
+  loadStats();
+  loadNotes();
+}
+
+// ─── NOTES ────────────────────────────────────────────────────────────────
+async function loadNotes() {
+  try {
+    const res = await apiFetch('/api/settings');
+    const data = await res.json();
+    document.getElementById('notes-textarea').value = data.owner_notes || '';
+  } catch (e) { console.error(e); }
+}
+
+async function saveNotes() {
+  const notes = document.getElementById('notes-textarea').value;
+  try {
+    await apiFetch('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ owner_notes: notes })
+    });
+    const msg = document.getElementById('notes-saved-msg');
+    msg.style.opacity = '1';
+    setTimeout(() => msg.style.opacity = '0', 3000);
+    showToast('Notes saved — AI will use these on the next quote.', 'g');
+  } catch (e) {
+    showToast('Failed to save notes.', 'r');
+  }
+}
+
+// ─── AUTO-REFRESH every 30s ───────────────────────────────────────────────
+setInterval(() => {
+  if (document.getElementById('app').style.display !== 'none') {
+    loadPending();
+    loadStats();
+  }
+}, 30000);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+if (API_KEY) {
+  initApp();
+}
+</script>
+</body>
+</html>
