@@ -48,7 +48,7 @@ const { sendQuoteEmail, sendApprovalNotification } = require('./mailer');
 const db = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT) || 8080;
 
 // ─── MIDDLEWARE ──────────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false })); // CSP disabled so dashboard iframe works
@@ -500,7 +500,21 @@ app.get('*', (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled rejection:', reason);
+  process.exit(1);
+});
+
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`ARK Furniture Quote Server running on port ${PORT}`);
-  console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
+});
+
+server.on('error', (err) => {
+  console.error('[FATAL] Server error:', err);
+  process.exit(1);
 });

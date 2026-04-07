@@ -1,17 +1,14 @@
-# fly.toml — ARK Furniture Quote System
-# Deploy with: fly deploy
-
 app = "ark-quotes"
-primary_region = "yyz"  # Toronto — closest to Oshawa
+primary_region = "yyz"
 
 [build]
 
 [env]
-  PORT = "3000"
+  PORT = "8080"
   NODE_ENV = "production"
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true
@@ -22,7 +19,6 @@ primary_region = "yyz"  # Toronto — closest to Oshawa
     hard_limit = 25
     soft_limit = 20
 
-# Persistent volume for SQLite database
 [mounts]
   source = "ark_data"
   destination = "/data"
