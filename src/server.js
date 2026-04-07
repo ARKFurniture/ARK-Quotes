@@ -270,6 +270,7 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
       analysis.finish_preference,
       analysis.detail_rating
     );
+    const { option1, option2, description: priceDescription } = priceResult;
 
     const pickupDate = db.getSetting('pickup_date');
 
@@ -279,7 +280,11 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
       finishPreference: analysis.finish_preference,
       openingParagraph: analysis.opening_paragraph,
       processParagraph: analysis.process_paragraph,
-      option1, option2, priceDescription, pickupDate
+      option1, option2,
+      option3: priceResult.option3 || null,
+      option4: priceResult.option4 || null,
+      priceDescription,
+      pickupDate
     });
 
     const quoteData = {
@@ -439,13 +444,12 @@ app.post('/api/quotes/:id/regenerate', requireAuth, async (req, res) => {
 
     const { feedback } = req.body;
 
-    // Append feedback to owner notes temporarily for this call
+    // Build a very explicit combined prompt that forces the AI to address the feedback
     const ownerNotes = db.getSetting('owner_notes') || '';
-    const combinedNotes = feedback
-      ? `${ownerNotes}
-
-SPECIFIC FEEDBACK FOR THIS REGENERATION: ${feedback}`.trim()
-      : ownerNotes;
+    let combinedNotes = ownerNotes;
+    if (feedback && feedback.trim()) {
+      combinedNotes = `${ownerNotes ? ownerNotes + '\n\n' : ''}CRITICAL — YOU MUST ADDRESS THIS SPECIFIC FEEDBACK IN YOUR NEW QUOTE. THIS IS THE MOST IMPORTANT INSTRUCTION:\n${feedback.trim()}\n\nDo NOT repeat the previous quote. Write completely fresh copy that directly addresses the feedback above.`.trim();
+    }
 
     const analysis = await analyzeEmail({
       customerName:   quote.customer_name,
