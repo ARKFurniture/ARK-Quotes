@@ -43,7 +43,10 @@ db.exec(`
     original_message TEXT,
     status           TEXT NOT NULL DEFAULT 'pending',
     created_at       TEXT NOT NULL DEFAULT (datetime('now')),
-    sent_at          TEXT
+    sent_at          TEXT,
+    phone            TEXT,
+    description      TEXT,
+    furniture_pieces TEXT
   );
   -- Add columns to existing databases that predate this schema
   PRAGMA table_info(quotes);
@@ -59,6 +62,9 @@ const newCols = [
   ['image_base64',     'TEXT'],
   ['image_media_type', 'TEXT'],
   ['original_message', 'TEXT'],
+  ['phone',            'TEXT'],
+  ['description',      'TEXT'],
+  ['furniture_pieces', 'TEXT'],
 ];
 for (const [col, type] of newCols) {
   if (!existingCols.includes(col)) {
@@ -95,12 +101,14 @@ function createQuote(data) {
       (customer_name, customer_email, piece_type, finish, detail_rating, detail_reasoning,
        option1_label, option1_price, option2_label, option2_price,
        option3_label, option3_price, option4_label, option4_price,
-       pickup_date, html_quote, image_base64, image_media_type, original_message, status)
+       pickup_date, html_quote, image_base64, image_media_type, original_message,
+       phone, description, furniture_pieces, status)
     VALUES
       (@customer_name, @customer_email, @piece_type, @finish, @detail_rating, @detail_reasoning,
        @option1_label, @option1_price, @option2_label, @option2_price,
        @option3_label, @option3_price, @option4_label, @option4_price,
-       @pickup_date, @html_quote, @image_base64, @image_media_type, @original_message, 'pending')
+       @pickup_date, @html_quote, @image_base64, @image_media_type, @original_message,
+       @phone, @description, @furniture_pieces, 'pending')
   `);
   const result = stmt.run(data);
   return result.lastInsertRowid;

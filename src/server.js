@@ -16,30 +16,56 @@ async function fireZapierWebhook(quoteId, data) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        quote_id:        quoteId,
-        customer_name:   data.customer_name,
-        customer_email:  data.customer_email,
-        piece_type:      data.piece_type,
-        finish:          data.finish,
-        detail_rating:   data.detail_rating,
-        detail_reasoning:data.detail_reasoning,
-        option1_label:   data.option1_label,
-        option1_price:   data.option1_price,
-        option2_label:   data.option2_label,
-        option2_price:   data.option2_price,
-        option3_label:   data.option3_label || '',
-        option3_price:   data.option3_price || '',
-        option4_label:   data.option4_label || '',
-        option4_price:   data.option4_price || '',
-        pickup_date:     data.pickup_date || '',
-        status:          'pending',
-        created_at:      new Date().toISOString(),
-        dashboard_url:   process.env.DASHBOARD_URL || ''
+        quote_id:         quoteId,
+        customer_name:    data.customer_name,
+        customer_email:   data.customer_email,
+        phone:            data.phone || '',
+        description:      data.description || '',
+        furniture_pieces: data.furniture_pieces || '',
+        finish:           data.finish,
+        piece_type:       data.piece_type || '',
+        detail_rating:    data.detail_rating || '',
+        detail_reasoning: data.detail_reasoning || '',
+        option1_label:    data.option1_label || '',
+        option1_price:    data.option1_price || '',
+        option2_label:    data.option2_label || '',
+        option2_price:    data.option2_price || '',
+        option3_label:    data.option3_label || '',
+        option3_price:    data.option3_price || '',
+        option4_label:    data.option4_label || '',
+        option4_price:    data.option4_price || '',
+        pickup_date:      data.pickup_date || '',
+        status:           data.status || 'pending',
+        created_at:       new Date().toISOString(),
+        dashboard_url:    process.env.DASHBOARD_URL || ''
       })
     });
     console.log(`[ZAPIER] Webhook fired for quote #${quoteId}`);
   } catch (err) {
     console.error('[ZAPIER] Webhook failed:', err.message);
+  }
+}
+
+// Fire immediately when form is submitted — before AI processing
+async function fireZapierFormSubmit(data) {
+  try {
+    await fetch(ZAPIER_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event:            'form_submitted',
+        customer_name:    data.customer_name,
+        customer_email:   data.customer_email,
+        phone:            data.phone || '',
+        description:      data.description || '',
+        furniture_pieces: data.furniture_pieces || '',
+        finish_preference:data.finish_preference || '',
+        submitted_at:     new Date().toISOString()
+      })
+    });
+    console.log(`[ZAPIER] Form submission fired for ${data.customer_email}`);
+  } catch (err) {
+    console.error('[ZAPIER] Form webhook failed:', err.message);
   }
 }
 const { calculatePrices } = require('./pricing');
@@ -252,6 +278,10 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
 
     console.log(`[FORM] New submission from ${customerName} <${customerEmail}> — finish: ${finishPreference}`);
 
+    // Fire Zapier immediately with raw form data — before AI processing
+    // This gets the lead into your Google Sheet right away
+    fireZapierFormSubmit({ customer_name: customerName, customer_email: customerEmail, phone, description, furniture_pieces: furniturePieces, finish_preference: finishPreference });
+
     // AI analysis — pass finish preference as a hint so AI doesn't override customer's choice
     const ownerNotes = db.getSetting('owner_notes') || '';
     const analysis = await analyzeEmail({
@@ -306,7 +336,10 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
       html_quote:       htmlQuote,
       image_base64:     imageBase64,
       image_media_type: imageMediaType,
-      original_message: message
+      original_message: message,
+      phone:            phone,
+      description:      description,
+      furniture_pieces: furniturePieces
     };
     const quoteId = db.createQuote(quoteData);
 
