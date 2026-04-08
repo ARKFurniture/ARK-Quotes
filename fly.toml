@@ -19,10 +19,6 @@ primary_region = "yyz"
     hard_limit = 25
     soft_limit = 20
 
-[mounts]
-  source = "ark_data"
-  destination = "/data"
-
 [[vm]]
   memory = "256mb"
   cpu_kind = "shared"
